@@ -15,7 +15,10 @@ spec:
     helm:
       releaseName: backstage
       values: |-
-        installCRDs: true
+        backstage:
+          image:
+            registry: c8n.io
+            repository: vfarcic/backstage
   destination:
     server: https://kubernetes.default.svc
     namespace: backstage
