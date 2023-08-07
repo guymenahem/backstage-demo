@@ -32,12 +32,3 @@ jobs:
           tags: ${{ env.IMAGE }}:latest,${{ env.IMAGE }}:${{ env.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.0.5
-      - name: Sign image with a key
-        run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.IMAGE }}:${{ env.VERSION }}
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.IMAGE }}:${{ env.VERSION }}-alpine
-        env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
