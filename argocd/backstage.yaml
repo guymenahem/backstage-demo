@@ -21,6 +21,7 @@ spec:
           value: vfarcic/backstage
         - name: ingress.enabled
           value: "true"
+          forceString: true
         - name: ingress.className
           value: traefik
         - name: ingress.host
