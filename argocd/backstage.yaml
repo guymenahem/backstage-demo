@@ -16,9 +16,9 @@ spec:
       releaseName: backstage
       parameters:
         - name: backstage.image.registry
-          value: c8n.io
+          value: ghcr.io
         - name: backstage.image.repository
-          value: vfarcic/backstage
+          value: guymenahem/backstage/backstage-argocd-workshop:1.0.2
         - name: ingress.enabled
           value: "true"
         - name: ingress.className
