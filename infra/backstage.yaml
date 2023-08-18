@@ -20,7 +20,7 @@ spec:
         - name: backstage.image.repository
           value: guymenahem/backstage/backstage-argocd-workshop
         - name: backstage.image.tag
-          value: latest
+          value: "1.0.2"
         - name: ingress.enabled
           value: "true"
         - name: ingress.className
