@@ -22,13 +22,13 @@ spec:
         - name: backstage.image.tag
           value: "1.0.2"
         - name: ingress.enabled
-          value: true
+          value: "true"
         - name: ingress.className
           value: traefik
         - name: ingress.host
           value: backstage.212.2.243.227.nip.io
         - name: postgresql.enabled
-          value: true
+          value: "true"
   destination:
     server: https://kubernetes.default.svc
     namespace: backstage
