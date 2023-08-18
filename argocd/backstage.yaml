@@ -28,7 +28,7 @@ spec:
         - name: ingress.host
           value: backstage.212.2.240.248.nip.io
         - name: postgresql.enabled
-          value: "true"
+          value: true
   destination:
     server: https://kubernetes.default.svc
     namespace: backstage
