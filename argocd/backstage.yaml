@@ -22,9 +22,9 @@ spec:
         - name: backstage.image.tag
           value: "1.0.2"
         - name: ingress.enabled
-          value: "true"
+          value: "traefik"
         - name: ingress.className
-          value: traefik
+          value: backstage.212.2.243.227.nip.io
         - name: ingress.host
           value: backstage.212.2.240.248.nip.io
   destination:
