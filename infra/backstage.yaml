@@ -18,7 +18,9 @@ spec:
         - name: backstage.image.registry
           value: ghcr.io
         - name: backstage.image.repository
-          value: guymenahem/backstage/backstage-argocd-workshop:1.0.2
+          value: guymenahem/backstage/backstage-argocd-workshop
+        - name: backstage.image.tag
+          value: latest
         - name: ingress.enabled
           value: "true"
         - name: ingress.className
