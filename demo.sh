@@ -40,6 +40,8 @@ gh repo set-default
 # The commands that follow will create a cluster in Civo, but any
 #   other should do.
 
+# TODO: Prepare clusters for the attendees and give them
+#   kube config.
 # Skip the command that follows if you chose to create a cluster
 #   in a different provider (other than Civo).
 # Please watch https://youtu.be/SwOIlzXLIw4 if you are not
@@ -88,14 +90,8 @@ yq --inplace \
     argocd/apps.yaml
 
 yq --inplace \
-    ".spec.source.helm.parameters[4].value = \"$INGRESS_CLASS\"" \
+    ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
     argocd/backstage.yaml
-
-yq --inplace \
-    ".spec.source.helm.parameters[5].value = \"backstage.$INGRESS_HOST.nip.io\"" \
-    argocd/backstage.yaml
-
-kubectl create namespace backstage
 
 ###########
 # Argo CD #
@@ -114,6 +110,20 @@ echo "http://argocd.$INGRESS_HOST.nip.io"
 cat argocd/apps.yaml
 
 kubectl apply --filename argocd/apps.yaml
+
+##############
+# PostgreSQL #
+##############
+
+cat argocd/cnpg.yaml
+
+cp argocd/cnpg.yaml infra/.
+
+git add .
+
+git commit -m "CPNG"
+
+git push
 
 #############
 # Backstage #
