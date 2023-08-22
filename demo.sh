@@ -125,6 +125,18 @@ git commit -m "CPNG"
 
 git push
 
+# Observe CNPG rollout in Argo CD UI
+
+cat argocd/backstage-postgresql.yaml
+
+cp argocd/backstage-postgresql.yaml infra/.
+
+git add .
+
+git commit -m "Backstage PostgreSQL"
+
+git push
+
 #############
 # Backstage #
 #############
