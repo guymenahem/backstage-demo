@@ -127,6 +127,8 @@ git push
 
 # Observe CNPG rollout in Argo CD UI
 
+kubectl --namespace cnpg-system get all
+
 cat argocd/backstage-postgresql.yaml
 
 cp argocd/backstage-postgresql.yaml infra/.
@@ -138,6 +140,20 @@ git commit -m "Backstage PostgreSQL"
 git push
 
 # Observe PostgreSQL rollout in Argo CD UI
+
+kubectl --namespace backstage get clusters,all
+
+export DB_USER=$(kubectl --namespace backstage \
+    get secret backstage-app \
+    --output jsonpath="{.data.username}" | base64 --decode)
+
+export DB_PASS=$(kubectl --namespace backstage \
+    get secret backstage-app \
+    --output jsonpath="{.data.password}" | base64 --decode)
+
+export DB_HOST=backstage-rw
+
+export DB_PORT=5432
 
 #############
 # Backstage #
