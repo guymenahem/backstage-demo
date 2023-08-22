@@ -137,6 +137,8 @@ git commit -m "Backstage PostgreSQL"
 
 git push
 
+# Observe PostgreSQL rollout in Argo CD UI
+
 #############
 # Backstage #
 #############
