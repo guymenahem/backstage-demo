@@ -40,13 +40,18 @@ gh repo set-default
 # The commands that follow will create a cluster in Civo, but any
 #   other should do.
 
+# Replace `[...]` with the name of the cluster.
+# Please make sure it is unique (e.g., your username, the name
+#   of your pet, etc.)
+export CLUSTER_NAME=[...]
+
 # TODO: Prepare clusters for the attendees and give them
 #   kube config.
 # Skip the command that follows if you chose to create a cluster
 #   in a different provider (other than Civo).
 # Please watch https://youtu.be/SwOIlzXLIw4 if you are not
 #   familiar with Civo.
-civo kubernetes create dot --size g4s.kube.medium \
+civo kubernetes create $CLUSTER_NAME --size g4s.kube.medium \
     --remove-applications=Traefik-v2-nodeport \
     --applications civo-cluster-autoscaler,Traefik-v2-loadbalancer \
     --nodes 1 --region NYC1 --yes --wait
