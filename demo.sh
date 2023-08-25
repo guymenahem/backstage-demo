@@ -116,6 +116,13 @@ cat argocd/apps.yaml
 
 kubectl apply --filename argocd/apps.yaml
 
+# Generate API auth token for ArgoCD
+ARGOCD_ADMIN_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+
+argocd login --insecure --port-forward --insecure --username admin --password $ARGOCD_ADMIN_PASSWORD --port-forward-namespace argocd
+
+ARGOCD_AUTH_TOKEN=$(argocd account generate-token --port-forward --port-forward-namespace argocd)
+
 ##############
 # PostgreSQL #
 ##############
