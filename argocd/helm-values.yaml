@@ -4,6 +4,7 @@ configs:
     argocdServerAdminPasswordMtime: "2021-11-08T15:04:05Z"
   cm:
     application.resourceTrackingMethod: annotation
+    accounts.admin: "apiKey, login"
 server:
   extraArgs:
     - --insecure
