@@ -105,7 +105,13 @@ yq --inplace \
 
 yq --inplace \
     ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
-    argocd/apps.yaml
+    argocd/apps/production-apps.yaml
+yq --inplace \
+    ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
+    argocd/apps/production-infra.yaml
+yq --inplace \
+    ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
+    argocd/apps/users-api.yaml
 
 yq --inplace \
     ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
@@ -125,16 +131,21 @@ echo "http://argocd.$INGRESS_HOST.nip.io"
 # Open the URL from the output in a browser
 # Use `admin` as the user and `admin123` as the password
 
-cat argocd/apps.yaml
+cat -r argocd/apps/*
 
+# Deploy a few applications
 kubectl apply --filename argocd/apps/
 
 # Generate API auth token for ArgoCD
 export ARGOCD_ADMIN_PASSWORD=admin123
 
-argocd login --insecure --port-forward --insecure --username admin --password $ARGOCD_ADMIN_PASSWORD --port-forward-namespace argocd --grpc-web --plaintext
+argocd login --insecure --port-forward --insecure --username admin \
+                --password $ARGOCD_ADMIN_PASSWORD \
+                --port-forward-namespace argocd \
+                --grpc-web --plaintext
 
-export ARGOCD_AUTH_TOKEN=$(argocd account generate-token --port-forward --port-forward-namespace argocd)
+export ARGOCD_AUTH_TOKEN=$(argocd account generate-token \
+                --port-forward --port-forward-namespace argocd)
 
 ##############
 # PostgreSQL #
@@ -168,19 +179,29 @@ git push
 
 kubectl --namespace backstage get clusters,all
 
-export DB_USER=$(kubectl --namespace backstage \
-    get secret backstage-app \
-    --output jsonpath="{.data.username}" | base64 --decode)
+# The the login credentials for Backstage
+
+export DB_USER_BASED=$(kubectl --namespace backstage \
+                        get secret backstage-app  \
+                        --output jsonpath="{.data.username}")
+
+export DB_USER=$(echo $DB_USER_BASED | base64 -d)
 
 export DB_PASS=$(kubectl --namespace backstage \
-    get secret backstage-app \
-    --output jsonpath="{.data.password}" | base64 --decode)
+                get secret backstage-app \
+                --output jsonpath="{.data.password}")
 
 export DB_HOST=backstage-rw
 
 export DB_PORT=5432
 
-kubectl exec -it --namespace=backstage backstage-1 -- psql -c "ALTER ROLE app CREATEDB;"
+# Wait for the DB to be created
+kubectl wait  job/backstage-1-initdb --for=condition=complete -n backstage --timeout=300s
+kubectl wait pods backstage-1 --for=condition=Ready -n backstage --timeout=90s
+
+# Allow the DB_USER to create a DB
+kubectl exec -it --namespace=backstage backstage-1 -- \
+                psql -c "ALTER ROLE $DB_USER CREATEDB;"
 
 #############
 # Backstage #
@@ -196,16 +217,16 @@ kubectl exec -it --namespace=backstage backstage-1 -- psql -c "ALTER ROLE app CR
 #
 #git push
 
-kubectl create namespace backstage --dry-run=client -o yaml | kubectl apply -f -
+yq --inplace ".data.POSTGRES_USER = \"$DB_USER_BASED\"" \
+                backstage-resources/bs-secret.yaml
 
-export DB_USER=$(kubectl --namespace backstage get secret backstage-app --output jsonpath="{.data.username}")
-export DB_PASS=$(kubectl --namespace backstage get secret backstage-app --output jsonpath="{.data.password}")
-yq --inplace ".data.POSTGRES_USER = \"$DB_USER\"" backstage-resources/bs-secret.yaml
-yq --inplace ".data.POSTGRES_PASSWORD = \"$DB_PASS\"" backstage-resources/bs-secret.yaml
+yq --inplace ".data.POSTGRES_PASSWORD = \"$DB_PASS\"" \
+                backstage-resources/bs-secret.yaml
 
 # Replace `[...]` with your Github token
 #
 export GITHUB_TOKEN=[...]
+export BASE_URL="backstage.$INGRESS_HOST.nip.io"
 
 base64_str $GITHUB_TOKEN
 yq --inplace ".data.GITHUB_TOKEN = \"$BASED64\"" backstage-resources/bs-secret.yaml
@@ -214,17 +235,21 @@ base64_str "argocd.token="$ARGOCD_AUTH_TOKEN
 yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"$BASED64\"" backstage-resources/bs-secret.yaml
 
 export CATALOG_URL=https://github.com/$GITHUB_ORG/backstage-demo/catalog/app-component.yaml
-base64_str $CATALOG_URL
-yq --inplace ".data.CATALOG_LOCATION = \"$BASED64\"" backstage-resources/bs-config.yaml
+yq --inplace ".data.CATALOG_LOCATION = \"$CATALOG_URL\"" backstage-resources/bs-config.yaml
 
 yq --inplace ".data.POSTGRES_PORT = \"$DB_PORT\"" backstage-resources/bs-config.yaml
 
 yq --inplace ".data.POSTGRES_HOST = \"$DB_HOST\"" backstage-resources/bs-config.yaml
 
-export BACKSTAGE_IMAGE=backstage-argocd-workshop:1.0.3
+yq --inplace ".data.BASE_URL = \"$BASE_URL\"" backstage-resources/bs-config.yaml
+
+export BACKSTAGE_IMAGE=backstage-argocd-workshop:1.0.4
+
 export BACKSTAGE_REGISTRY=ghcr.io/guymenahem/backstage/
+
 export FULL_BACKSTAGE_IMAGE_ID=$BACKSTAGE_REGISTRY""$BACKSTAGE_IMAGE
-yq --inplace ".spec.template.spec.containers[0].image = \"$FULL_BACKSTAGE_IMAGE_ID\"" backstage-resources/bs-deploy.yaml
+yq --inplace ".spec.template.spec.containers[0].image = \"$FULL_BACKSTAGE_IMAGE_ID\"" \
+              backstage-resources/bs-deploy.yaml
 
 
 
@@ -233,9 +258,9 @@ kubectl apply -f backstage-resources
 kubectl rollout status -w -n backstage deployment backstage --timeout=300s
 
 
-# Observe in Argo CD
+# Observe in Backstage
 
-echo "http://backstage.$INGRESS_HOST.nip.io"
+echo "https://$BASE_URL"
 
 # Open the URL from the output in a browser
 
