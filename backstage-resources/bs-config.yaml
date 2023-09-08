@@ -1,0 +1,10 @@
+# kubernetes/backstage-secrets.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backstage-config
+  namespace: backstage
+data:
+  POSTGRES_PORT: ""
+  POSTGRES_HOST: ""
+  CATALOG_LOCATION: ""

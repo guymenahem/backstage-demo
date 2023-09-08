@@ -25,6 +25,19 @@
 #   if it is a personal account
 export GITHUB_ORG=[...]
 
+# Function to make base64 compatible for Mac OS
+# No need to touch it!
+function base64_str()
+{
+    STR=$1
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        export BASED64=$(echo $STR'\c' | gbase64 -w 0)
+        return
+    fi
+    export BASED64=$(echo -n "$STR" | base64 -w 0)
+}
+
 # Watch https://youtu.be/BII6ZY2Rnlc if you are not familiar
 #   with GitHub CLI
 gh repo fork vfarcic/backstage-demo --clone --remote \
@@ -62,7 +75,7 @@ export KUBECONFIG=$PWD/kubeconfig.yaml
 
 # Skip the command that follows if you chose to create a cluster
 #   in a different provider (other than Civo).
-civo kubernetes config dot --region NYC1 \
+civo kubernetes config $CLUSTER_NAME --region NYC1 \
     --local-path $KUBECONFIG --save
 
 # Skip the command that follows if you chose to create a cluster
@@ -114,14 +127,14 @@ echo "http://argocd.$INGRESS_HOST.nip.io"
 
 cat argocd/apps.yaml
 
-kubectl apply --filename argocd/apps.yaml
+kubectl apply --filename argocd/apps/
 
 # Generate API auth token for ArgoCD
-ARGOCD_ADMIN_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+export ARGOCD_ADMIN_PASSWORD=admin123
 
-argocd login --insecure --port-forward --insecure --username admin --password $ARGOCD_ADMIN_PASSWORD --port-forward-namespace argocd
+argocd login --insecure --port-forward --insecure --username admin --password $ARGOCD_ADMIN_PASSWORD --port-forward-namespace argocd --grpc-web --plaintext
 
-ARGOCD_AUTH_TOKEN=$(argocd account generate-token --port-forward --port-forward-namespace argocd)
+export ARGOCD_AUTH_TOKEN=$(argocd account generate-token --port-forward --port-forward-namespace argocd)
 
 ##############
 # PostgreSQL #
@@ -167,19 +180,58 @@ export DB_HOST=backstage-rw
 
 export DB_PORT=5432
 
+kubectl exec -it --namespace=backstage backstage-1 -- psql -c "ALTER ROLE app CREATEDB;"
+
 #############
 # Backstage #
 #############
 
-cat argocd/backstage.yaml
+#cat argocd/backstage.yaml
+#
+#cp argocd/backstage.yaml infra/.
+#
+#git add .
+#
+#git commit -m "Backstage"
+#
+#git push
 
-cp argocd/backstage.yaml infra/.
+kubectl create namespace backstage --dry-run=client -o yaml | kubectl apply -f -
 
-git add .
+export DB_USER=$(kubectl --namespace backstage get secret backstage-app --output jsonpath="{.data.username}")
+export DB_PASS=$(kubectl --namespace backstage get secret backstage-app --output jsonpath="{.data.password}")
+yq --inplace ".data.POSTGRES_USER = \"$DB_USER\"" backstage-resources/bs-secret.yaml
+yq --inplace ".data.POSTGRES_PASSWORD = \"$DB_PASS\"" backstage-resources/bs-secret.yaml
 
-git commit -m "Backstage"
+# Replace `[...]` with your Github token
+#
+export GITHUB_TOKEN=[...]
 
-git push
+base64_str $GITHUB_TOKEN
+yq --inplace ".data.GITHUB_TOKEN = \"$BASED64\"" backstage-resources/bs-secret.yaml
+
+base64_str "argocd.token="$ARGOCD_AUTH_TOKEN
+yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"$BASED64\"" backstage-resources/bs-secret.yaml
+
+export CATALOG_URL=https://github.com/$GITHUB_ORG/backstage-demo/catalog/app-component.yaml
+base64_str $CATALOG_URL
+yq --inplace ".data.CATALOG_LOCATION = \"$BASED64\"" backstage-resources/bs-config.yaml
+
+yq --inplace ".data.POSTGRES_PORT = \"$DB_PORT\"" backstage-resources/bs-config.yaml
+
+yq --inplace ".data.POSTGRES_HOST = \"$DB_HOST\"" backstage-resources/bs-config.yaml
+
+export BACKSTAGE_IMAGE=backstage-argocd-workshop:1.0.3
+export BACKSTAGE_REGISTRY=ghcr.io/guymenahem/backstage/
+export FULL_BACKSTAGE_IMAGE_ID=$BACKSTAGE_REGISTRY""$BACKSTAGE_IMAGE
+yq --inplace ".spec.template.spec.containers[0].image = \"$FULL_BACKSTAGE_IMAGE_ID\"" backstage-resources/bs-deploy.yaml
+
+
+
+kubectl apply -f backstage-resources
+
+kubectl rollout status -w -n backstage deployment backstage --timeout=300s
+
 
 # Observe in Argo CD
 
@@ -191,13 +243,13 @@ echo "http://backstage.$INGRESS_HOST.nip.io"
 # Destroy The Cluster #
 #######################
 
-civo kubernetes remove dot --region NYC1 --yes
+civo kubernetes remove $CLUSTER_NAME --region NYC1 --yes
 
 rm -f $KUBECONFIG
 
 sleep 10
 
-civo firewall ls --region NYC1 --output custom --fields "name" | grep dot \
+civo firewall ls --region NYC1 --output custom --fields "name" | grep $CLUSTER_NAME \
     | while read FIREWALL; do
     civo firewall rm $FIREWALL --region NYC1 --yes
 done

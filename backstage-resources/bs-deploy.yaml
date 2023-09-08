@@ -1,0 +1,29 @@
+# kubernetes/backstage.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backstage
+  namespace: backstage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backstage
+  template:
+    metadata:
+      labels:
+        app: backstage
+    spec:
+      serviceAccountName: backstage-service-account
+      containers:
+        - name: backstage
+          image: ghcr.io/guymenahem/backstage/backstage-argocd-workshop:1.0.3
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 7007
+          envFrom:
+            - secretRef:
+                name: backstage-secrets
+            - configMapRef:
+                name: backstage-config
