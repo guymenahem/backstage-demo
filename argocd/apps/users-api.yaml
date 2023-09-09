@@ -10,7 +10,7 @@ spec:
     server: 'https://kubernetes.default.svc'
   source:
     path: backstage/exmaple-application
-    repoURL: 'https://github.com/guymenahem/how-to-devops-tools'
+    repoURL: 'https://github.com/guymenahem/backstage-demo'
     targetRevision: main
     directory:
       include: example-app.yaml

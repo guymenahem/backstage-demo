@@ -224,6 +224,16 @@ yq --inplace ".data.POSTGRES_PASSWORD = \"$DB_PASS\"" \
                 backstage-resources/bs-secret.yaml
 
 # Replace `[...]` with your Github token
+# Create a token in GitHub - https://github.com/settings/tokens
+# or by navigating to Settings -> Developer Settings (left panel) -> 
+# Personal Access Token -> Tokens (Classic) -> Generate new token
+# 
+# Required permissions: 
+#   - repo
+#   - read:org
+#   - read:user
+#   - user:email
+#   - workflow
 #
 export GITHUB_TOKEN=[...]
 export BASE_URL="backstage.$INGRESS_HOST.nip.io"
@@ -233,6 +243,10 @@ yq --inplace ".data.GITHUB_TOKEN = \"$BASED64\"" backstage-resources/bs-secret.y
 
 base64_str "argocd.token="$ARGOCD_AUTH_TOKEN
 yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"$BASED64\"" backstage-resources/bs-secret.yaml
+
+export ARGOCD_URL="http://argocd.$INGRESS_HOST.nip.io/api/v1/"
+yq --inplace ".data.ARGOCD_URL = \"$ARGOCD_URL\"" backstage-resources/bs-config.yaml
+
 
 export CATALOG_URL=https://github.com/$GITHUB_ORG/backstage-demo/catalog/app-component.yaml
 yq --inplace ".data.CATALOG_LOCATION = \"$CATALOG_URL\"" backstage-resources/bs-config.yaml
