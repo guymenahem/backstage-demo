@@ -11,10 +11,10 @@ spec:
   source:
     repoURL: https://github.com/vfarcic/backstage-demo
     targetRevision: HEAD
-    path: backstage
+    path: backstage-resources
   destination:
     server: https://kubernetes.default.svc
-    namespace: schemahero-system
+    namespace: backstage
   syncPolicy:
     automated:
       selfHeal: true

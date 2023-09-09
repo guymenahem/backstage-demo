@@ -1,16 +1,18 @@
+---
+
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: production-apps
+  name: production-infra
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/vfarcic/backstage-demo
+    repoURL: https://github.com/guymenahem/backstage-demo
     targetRevision: HEAD
-    path: apps
+    path: infra
   destination:
     server: https://kubernetes.default.svc
     namespace: production
