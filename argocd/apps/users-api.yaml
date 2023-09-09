@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: users-api
+  namespace: argocd
+spec:
+  destination:
+    name: ''
+    namespace: ''
+    server: 'https://kubernetes.default.svc'
+  source:
+    path: backstage/exmaple-application
+    repoURL: 'https://github.com/guymenahem/backstage-demo'
+    targetRevision: main
+    directory:
+      include: example-app.yaml
+  sources: []
+  project: default
+  syncPolicy:
+    automated: {}
