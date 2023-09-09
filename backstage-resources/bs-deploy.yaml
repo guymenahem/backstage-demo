@@ -17,7 +17,7 @@ spec:
       serviceAccountName: backstage-service-account
       containers:
         - name: backstage
-          image: ghcr.io/guymenahem/backstage/backstage-argocd-workshop:1.0.3
+          image: ghcr.io/guymenahem/backstage/backstage-argocd-workshop:1.0.4
           imagePullPolicy: Always
           ports:
             - name: http
