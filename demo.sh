@@ -19,26 +19,11 @@
 # Setup #
 #########
 
-# TODO: Convert to `gum` script
+# TODO: Viktor: Convert to `gum` script
 
 # Replace `[...]` with the GitHub organization or a GitHub user
 #   if it is a personal account
 export GITHUB_ORG=[...]
-
-# TODO: gbase is not installed in MacOS by default.
-# TODO: `base64` works on both of my Mac machines (Intel and M1).
-# Function to make base64 compatible for Mac OS
-# No need to touch it!
-function base64_str()
-{
-    STR=$1
-
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        export BASED64=$(echo $STR'\c' | gbase64 -w 0)
-        return
-    fi
-    export BASED64=$(echo -n "$STR" | base64 -w 0)
-}
 
 # Watch https://youtu.be/BII6ZY2Rnlc if you are not familiar
 #   with GitHub CLI
@@ -60,7 +45,7 @@ gh repo set-default
 #   of your pet, etc.)
 export CLUSTER_NAME=[...]
 
-# TODO: Prepare clusters for the attendees and give them
+# TODO: Viktor: Prepare clusters for the attendees and give them
 #   kube config.
 # Skip the command that follows if you chose to create a cluster
 #   in a different provider (other than Civo).
@@ -116,7 +101,7 @@ yq --inplace \
     ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
     argocd/production-infra.yaml
 
-# TODO: This is not used anywhere
+# TODO: Guy: This is not used anywhere
 yq --inplace \
     ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
     argocd/apps/users-api.yaml
@@ -124,6 +109,48 @@ yq --inplace \
 yq --inplace \
     ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
     argocd/backstage.yaml
+
+# Create a token in GitHub - https://github.com/settings/tokens
+# or by navigating to Settings -> Developer Settings (left panel) -> 
+# Personal Access Token -> Tokens (Classic) -> Generate new token
+# 
+# Required permissions: 
+#   - repo
+#   - read:org
+#   - read:user
+#   - user:email
+#   - workflow
+
+# Replace `[...]` with your Github token
+export GITHUB_TOKEN=[...]
+
+export GITHUB_TOKEN_ENCODED=$(echo -n $GITHUB_TOKEN | base64)
+
+# TODO: Guy: We should move Backstage manifests to Git so that they
+#   can be managed by Argo CD.
+#   Otherwise, what's the point of showing Argo CD?
+#   To do that, we should not add secrets to manifests.
+#   Even if we do not sync backstage with Argo CD, we will be
+#   pushing app manifests to Git and, with them, the secrets
+#   stored in manifests unencrypted and expose everyone's
+#   GitHub tokens.
+# TODO: Guy: I suggest using SealedSecrets to generate
+#   `backstage-resources/bs-secret.yaml`.
+yq --inplace ".data.GITHUB_TOKEN = \"$GITHUB_TOKEN_ENCODED\"" \
+    backstage-resources/bs-secret.yaml
+
+yq --inplace \
+    ".data.ARGOCD_URL = \"http://argocd.$INGRESS_HOST.nip.io/api/v1/\"" \
+    backstage-resources/bs-config.yaml
+
+yq --inplace \
+    ".data.CATALOG_LOCATION = \"https://github.com/$GITHUB_ORG/backstage-demo/catalog/app-component.yaml\"" \
+    backstage-resources/bs-config.yaml
+
+export BACKSTAGE_URL="backstage.$INGRESS_HOST.nip.io"
+
+yq --inplace ".data.BASE_URL = \"$BACKSTAGE_URL\"" \
+    backstage-resources/bs-config.yaml
 
 ###########
 # Argo CD #
@@ -156,6 +183,9 @@ argocd login --insecure --port-forward --insecure \
 # Generate API auth token for ArgoCD
 export ARGOCD_AUTH_TOKEN=$(argocd account generate-token \
     --port-forward --port-forward-namespace argocd)
+
+export ARGOCD_AUTH_TOKEN_ENCODED=$(
+    echo -n "argocd.token=$ARGOCD_AUTH_TOKEN" | base64)
 
 ##############
 # PostgreSQL #
@@ -191,136 +221,41 @@ kubectl --namespace backstage get clusters,all
 
 # The the login credentials for Backstage
 
-# TODO: It's always `app` so there might not be a need to
-#   complicate it by retrieving and decoding the secret.
-# TODO: Later on, I'll suggest to use SchemaHero or Atlas
-#   Operator to manage DB schema and, for that, using a
-#   hard-coded user is easier.
-export DB_USER_BASED=$(kubectl --namespace backstage \
-    get secret backstage-app \
-    --output jsonpath="{.data.username}")
-
-# TODO: It's always `app` so there might not be a need to
-#   complicate it by retrieving and decoding the secret.
-export DB_USER=$(echo $DB_USER_BASED | base64 -d)
-
 export DB_PASS=$(kubectl --namespace backstage \
     get secret backstage-app \
     --output jsonpath="{.data.password}")
-
-# TODO: Remove
-export DB_HOST=backstage-rw
-
-# TODO: Remove
-export DB_PORT=5432
-
-# TODO: CNPG eventually removes the jobs so if this command
-#   is executed late, it might fail.
-kubectl wait  job/backstage-1-initdb --for=condition=complete -n backstage --timeout=300s
 
 # Wait for the DB to be created
 kubectl --namespace backstage wait pod backstage-1 \
     --for=condition=Ready --timeout=90s
 
-# TODO: Let's stick with GitOps instead of executing `kubectl`
+# Repeat the previous command if it errored claiming that the
+#   Pod does not exist since that probably means that the Pod
+#   was not yet created.
+
+# TODO: Guy: Let's stick with GitOps instead of executing `kubectl`
 #   to change the state of something.
-# TODO: Switch to SchemaHero or Atlas Operator (my choice)
-# Allow the DB_USER to create a DB
+# TODO: Viktor: Switch to SchemaHero or Atlas Operator (my choice)
+# Allow `app` to create a DB
 kubectl exec -it --namespace=backstage backstage-1 -- \
-    psql -c "ALTER ROLE $DB_USER CREATEDB;"
+    psql -c "ALTER ROLE app CREATEDB;"
 
 #############
 # Backstage #
 #############
 
-# TODO: There's no need for this since the user, in this setup,
-#   does not change (it's always `app`).
-yq --inplace ".data.POSTGRES_USER = \"$DB_USER_BASED\"" \
-    backstage-resources/bs-secret.yaml
-
 yq --inplace ".data.POSTGRES_PASSWORD = \"$DB_PASS\"" \
     backstage-resources/bs-secret.yaml
 
-# Replace `[...]` with your Github token
-# Create a token in GitHub - https://github.com/settings/tokens
-# or by navigating to Settings -> Developer Settings (left panel) -> 
-# Personal Access Token -> Tokens (Classic) -> Generate new token
-# 
-# Required permissions: 
-#   - repo
-#   - read:org
-#   - read:user
-#   - user:email
-#   - workflow
-
-# TODO: Move this to the `Setup` section
-export GITHUB_TOKEN=[...]
-
-export BACKSTAGE_URL="backstage.$INGRESS_HOST.nip.io"
-
-# TODO: This does not work on MacOS without 
-base64_str $GITHUB_TOKEN
-
-# TODO: Move this to the `Setup` section
-# TODO: We should move Backstage manifests to Git so that they
-#   can be managed by Argo CD.
-#   Otherwise, what's the point of showing Argo CD?
-#   To do that, we should not add secrets to manifests.
-#   Even if we do not sync backstage with Argo CD, we will be
-#   pushing app manifests to Git and, with them, the secrets
-#   stored in manifests unencrypted and expose everyone's
-#   GitHub tokens.
-# TODO: I suggest using SealedSecrets to generate
-#   `backstage-resources/bs-secret.yaml`.
-yq --inplace ".data.GITHUB_TOKEN = \"$BASED64\"" \
+yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"$ARGOCD_AUTH_TOKEN_ENCODED\"" \
     backstage-resources/bs-secret.yaml
 
-base64_str "argocd.token="$ARGOCD_AUTH_TOKEN
-
-yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"$BASED64\"" \
-    backstage-resources/bs-secret.yaml
-
-# TODO: Move this to the `Setup` section
-export ARGOCD_URL="http://argocd.$INGRESS_HOST.nip.io/api/v1/"
-
-# TODO: Move this to the `Setup` section
-yq --inplace ".data.ARGOCD_URL = \"$ARGOCD_URL\"" \
-    backstage-resources/bs-config.yaml
-
-# TODO: Move this to the `Setup` section
-export CATALOG_URL=https://github.com/$GITHUB_ORG/backstage-demo/catalog/app-component.yaml
-
-# TODO: Move this to the `Setup` section
-yq --inplace ".data.CATALOG_LOCATION = \"$CATALOG_URL\"" \
-    backstage-resources/bs-config.yaml
-
-# TODO: It's always the same port (in this setup) so there's no
-#   need to change it.
-yq --inplace ".data.POSTGRES_PORT = \"$DB_PORT\"" \
-    backstage-resources/bs-config.yaml
-
-# TODO: It's always the same host (in this setup) so there's no
-#   need to change it.
-yq --inplace ".data.POSTGRES_HOST = \"$DB_HOST\"" \
-    backstage-resources/bs-config.yaml
-
-yq --inplace ".data.BASE_URL = \"$BACKSTAGE_URL\"" \
-    backstage-resources/bs-config.yaml
-
-export BACKSTAGE_IMAGE=backstage-argocd-workshop:1.0.4
-
-export BACKSTAGE_REGISTRY=ghcr.io/guymenahem/backstage/
-
-export FULL_BACKSTAGE_IMAGE_ID=$BACKSTAGE_REGISTRY""$BACKSTAGE_IMAGE
-yq --inplace ".spec.template.spec.containers[0].image = \"$FULL_BACKSTAGE_IMAGE_ID\"" \
-              backstage-resources/bs-deploy.yaml
-
-# TODO: We should create an Argo CD app that points to the
+# TODO: Guy: We should create an Argo CD app that points to the
 #   `backstage-resources` directory once we move generation of
 #   secrets to SealedSecrets.
 kubectl apply --filename backstage-resources
 
-# TODO: Uncomment once we're ready to sync Backstage with
+# TODO: Guy: Uncomment once we're ready to sync Backstage with
 #   Argo CD.
 #cat argocd/backstage.yaml
 #
@@ -332,7 +267,7 @@ kubectl apply --filename backstage-resources
 #
 #git push
 
-# TODO: Change to `Observe in Argo CD` once we move it
+# TODO: Guy: Change to `Observe in Argo CD` once we move it
 kubectl --namespace backstage rollout status \
     deployment backstage --watch --timeout=300s
 
@@ -346,19 +281,21 @@ echo "https://$BACKSTAGE_URL"
 # Destroy The Cluster #
 #######################
 
-# TODO: This is necessary to avoid pushing secrets to Git until
+# This is necessary to avoid pushing secrets to Git until
 #   we move to SealedSecrets (or any other alternative).
+# TODO: Guy: Remove it after switching to SealedSecrets.
 yq --inplace ".data.POSTGRES_PASSWORD = \"SOMETHING\"" \
     backstage-resources/bs-secret.yaml
 
-# TODO: This is necessary to avoid pushing secrets to Git until
+# This is necessary to avoid pushing secrets to Git until
 #   we move to SealedSecrets (or any other alternative).
+# TODO: Guy: Remove it after switching to SealedSecrets.
 yq --inplace ".data.GITHUB_TOKEN = \"SOMETHING\"" \
     backstage-resources/bs-secret.yaml
 
-# TODO: Argo CD auth token is temporary so it should not be a big
-#   deal to push it to Git, but GitHub might reject the commit
-#   that contains a secret.
+# This is necessary to avoid pushing secrets to Git until
+#   we move to SealedSecrets (or any other alternative).
+# TODO: Guy: Remove it after switching to SealedSecrets.
 yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"SOMETHING\"" \
     backstage-resources/bs-secret.yaml
 
