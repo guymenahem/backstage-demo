@@ -11,11 +11,11 @@ spec:
     namespace: ''
     server: 'https://kubernetes.default.svc'
   source:
-    path: backstage/exmaple-application
-    repoURL: 'https://github.com/vfarcic/backstage-demo'
+    path: users-api
+    repoURL: 'https://github.com/guymenahem/backstage-demo'
     targetRevision: main
     directory:
-      include: example-app.yaml
+      include: deployment.yaml
   sources: []
   project: default
   syncPolicy:

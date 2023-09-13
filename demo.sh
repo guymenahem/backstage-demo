@@ -101,10 +101,9 @@ yq --inplace \
     ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
     argocd/production-infra.yaml
 
-# TODO: Guy: This is not used anywhere
 yq --inplace \
     ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
-    argocd/apps/users-api.yaml
+    argocd/users-api.yaml
 
 yq --inplace \
     ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
@@ -186,6 +185,17 @@ export ARGOCD_AUTH_TOKEN=$(argocd account generate-token \
 
 export ARGOCD_AUTH_TOKEN_ENCODED=$(
     echo -n "argocd.token=$ARGOCD_AUTH_TOKEN" | base64)
+
+# Deploy your first application in ArgoCD
+cat argocd/users-api.yaml
+
+cp argocd/users-api.yaml apps/.
+
+git add apps
+
+git commit -m "deploy users-api"
+
+git push
 
 ##############
 # PostgreSQL #
