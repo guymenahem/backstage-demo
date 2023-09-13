@@ -280,9 +280,9 @@ cat argocd/backstage.yaml
 
 cp argocd/backstage.yaml infra/.
 
-git add .
+git add infra
 
-git commit -m "Backstage"
+git commit -m "Deploy Backstage"
 
 git push
 
