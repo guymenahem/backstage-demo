@@ -2,21 +2,24 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: production-apps
+  name: cnpg
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/vfarcic/backstage-demo
-    targetRevision: HEAD
-    path: apps
+    chart: cloudnative-pg
+    repoURL: https://cloudnative-pg.github.io/charts
+    targetRevision: 0.18.2
+    helm:
+      releaseName: cnpg
   destination:
     server: https://kubernetes.default.svc
-    namespace: production
+    namespace: cnpg-system
   syncPolicy:
     automated:
       selfHeal: true
       prune: true
-      allowEmpty: true
+    syncOptions:
+      - CreateNamespace=true

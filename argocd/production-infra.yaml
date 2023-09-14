@@ -1,5 +1,4 @@
 ---
-
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -10,7 +9,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/guymenahem/backstage-demo
+    repoURL: https://github.com/vfarcic/backstage-demo
     targetRevision: HEAD
     path: infra
   destination:

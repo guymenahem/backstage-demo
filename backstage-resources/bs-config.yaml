@@ -7,6 +7,6 @@ metadata:
 data:
   POSTGRES_PORT: "5432"
   POSTGRES_HOST: "backstage-rw"
-  CATALOG_LOCATION: "https://github.com/guymenahem/backstage-demo/catalog/app-component.yaml"
-  BASE_URL: ""
-  ARGOCD_URL: ""
+  CATALOG_LOCATION: "https://github.com/vfarcic/backstage-demo/catalog/app-component.yaml"
+  BASE_URL: "backstage.212.2.242.23.nip.io"
+  ARGOCD_URL: "http://argocd.212.2.242.23.nip.io/api/v1/"

@@ -185,6 +185,8 @@ export ARGOCD_AUTH_TOKEN=$(argocd account generate-token \
 export ARGOCD_AUTH_TOKEN_ENCODED=$(
     echo -n "argocd.token=$ARGOCD_AUTH_TOKEN" | base64)
 
+# TODO: Guy: This one does not deploy anything.
+#   There is no `deployment.yaml` referenced in that manifest.
 # Deploy your first application in ArgoCD
 cat argocd/users-api.yaml
 
@@ -199,6 +201,7 @@ git push
 #################
 # SealedSecrets #
 #################
+
 cat argocd/sealed-secrets-app.yaml
 
 cp argocd/sealed-secrets-app.yaml infra/.
@@ -208,7 +211,6 @@ git add infra
 git commit -m "deploy sealed secrets controller"
 
 git push
-
 
 ##############
 # PostgreSQL #
