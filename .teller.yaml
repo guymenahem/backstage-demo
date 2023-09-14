@@ -7,4 +7,4 @@ providers:
       C8N_SECRET:
         path: projects/vfarcic/secrets/c8n-secret/versions/1
       GITHUB_TOKEN:
-        path: projects/vfarcic/secrets/github-token/versions/1
+        path: projects/vfarcic/secrets/github-token/versions/2

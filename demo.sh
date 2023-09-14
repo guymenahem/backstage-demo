@@ -241,7 +241,7 @@ git commit -m "Backstage PostgreSQL"
 git push
 
 # Observe PostgreSQL rollout in Argo CD UI
-
+xxx
 kubectl --namespace backstage get clusters,all
 
 # The the login credentials for Backstage
@@ -297,10 +297,13 @@ echo "https://$BACKSTAGE_URL"
 #######################
 # Destroy The Cluster #
 #######################
+
 yq --inplace ".data.POSTGRES_PASSWORD = \"SOMETHING\"" \
     backstage-secret.yaml
+
 yq --inplace ".data.GITHUB_TOKEN = \"SOMETHING\"" \
     backstage-secret.yaml
+
 yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"SOMETHING\"" \
     backstage-secret.yaml
 
@@ -319,6 +322,8 @@ civo volume ls --region NYC1 --dangling --output custom --fields "name" \
     | while read VOLUME; do
     civo volume rm $VOLUME --region NYC1 --yes
 done
+
+rm apps/*.yaml
 
 rm infra/*.yaml
 
