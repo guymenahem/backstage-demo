@@ -255,10 +255,10 @@ kubectl --namespace backstage wait pod backstage-1 \
 #   Pod does not exist since that probably means that the Pod
 #   was not yet created.
 
-# TODO: Guy: Let's stick with GitOps instead of executing `kubectl`
-#   to change the state of something.
-# TODO: Viktor: Switch to SchemaHero or Atlas Operator (my choice)
-# Allow `app` to create a DB
+kubectl exec -it --namespace=backstage backstage-1 -- \
+    psql -c "\du"
+
+# TODO: Viktor: Replace this with Atlas or CNPG init
 kubectl exec -it --namespace=backstage backstage-1 -- \
     psql -c "ALTER ROLE app CREATEDB;"
 
@@ -270,12 +270,12 @@ kubectl exec -it --namespace=backstage backstage-1 -- \
 yq --inplace ".data.GITHUB_TOKEN = \"$GITHUB_TOKEN_ENCODED\"" \
     backstage-secret.yaml
 
+# TODO: Move to SealedSecrets
 yq --inplace ".data.POSTGRES_PASSWORD = \"$DB_PASS\"" \
     backstage-secret.yaml
 
 yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"$ARGOCD_AUTH_TOKEN_ENCODED\"" \
     backstage-secret.yaml
-
 
 kubeseal --format=yaml --controller-namespace kubeseal < backstage-secret.yaml > backstage-resources/bs-secret.yaml
 

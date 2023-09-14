@@ -14,3 +14,7 @@ spec:
   primaryUpdateStrategy: unsupervised
   storage:
     size: 1Gi
+  bootstrap:
+    initdb:
+      postInitSQL:
+        - ALTER ROLE app CREATEDB
