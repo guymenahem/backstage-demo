@@ -134,9 +134,6 @@ export GITHUB_TOKEN_ENCODED=$(echo -n $GITHUB_TOKEN | base64)
 #   stored in manifests unencrypted and expose everyone's
 #   GitHub tokens.
 
-yq --inplace ".data.GITHUB_TOKEN = \"$GITHUB_TOKEN_ENCODED\"" \
-    backstage-secret.yaml
-
 yq --inplace \
     ".data.ARGOCD_URL = \"http://argocd.$INGRESS_HOST.nip.io/api/v1/\"" \
     backstage-resources/bs-config.yaml
@@ -241,7 +238,7 @@ git commit -m "Backstage PostgreSQL"
 git push
 
 # Observe PostgreSQL rollout in Argo CD UI
-xxx
+
 kubectl --namespace backstage get clusters,all
 
 # The the login credentials for Backstage
@@ -268,6 +265,10 @@ kubectl exec -it --namespace=backstage backstage-1 -- \
 #############
 # Backstage #
 #############
+
+# TODO: Move to SealedSecrets
+yq --inplace ".data.GITHUB_TOKEN = \"$GITHUB_TOKEN_ENCODED\"" \
+    backstage-secret.yaml
 
 yq --inplace ".data.POSTGRES_PASSWORD = \"$DB_PASS\"" \
     backstage-secret.yaml
