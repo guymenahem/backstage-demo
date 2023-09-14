@@ -1,2 +1,3 @@
 /kubeconfig.yaml
 /backstage-secret.yaml
+/.env
