@@ -127,8 +127,6 @@ yq --inplace \
 # Replace `[...]` with your Github token
 export GITHUB_TOKEN=[...]
 
-export GITHUB_TOKEN_ENCODED=$(echo -n $GITHUB_TOKEN | base64)
-
 # TODO: Guy: We should move Backstage manifests to Git so that they
 #   can be managed by Argo CD.
 #   Otherwise, what's the point of showing Argo CD?
@@ -150,6 +148,9 @@ export BACKSTAGE_URL="backstage.$INGRESS_HOST.nip.io"
 
 yq --inplace ".data.BASE_URL = \"$BACKSTAGE_URL\"" \
     backstage-resources/bs-config.yaml
+
+# Install `kubeseal` by following the instructions at
+#   https://github.com/bitnami-labs/sealed-secrets#kubeseal
 
 ###########
 # Argo CD #
@@ -199,20 +200,6 @@ git commit -m "deploy users-api"
 
 git push
 
-#################
-# SealedSecrets #
-#################
-
-cat argocd/sealed-secrets-app.yaml
-
-cp argocd/sealed-secrets-app.yaml infra/.
-
-git add infra
-
-git commit -m "deploy sealed secrets controller"
-
-git push
-
 ##############
 # PostgreSQL #
 ##############
@@ -243,13 +230,13 @@ git push
 
 # Observe PostgreSQL rollout in Argo CD UI
 
-kubectl --namespace backstage get clusters,all
+kubectl --namespace backstage get clusters
 
 # The the login credentials for Backstage
 
 export DB_PASS=$(kubectl --namespace backstage \
     get secret backstage-app \
-    --output jsonpath="{.data.password}")
+    --output jsonpath="{.data.password}" | base64 --decode)
 
 # Wait for the DB to be created
 kubectl --namespace backstage wait pod backstage-1 \
@@ -262,26 +249,45 @@ kubectl --namespace backstage wait pod backstage-1 \
 kubectl exec -it --namespace=backstage backstage-1 -- \
     psql -c "\du"
 
-# TODO: Viktor: Replace this with Atlas or CNPG init
-kubectl exec -it --namespace=backstage backstage-1 -- \
-    psql -c "ALTER ROLE app CREATEDB;"
+#################
+# SealedSecrets #
+#################
+
+cat argocd/sealed-secrets-app.yaml
+
+cp argocd/sealed-secrets-app.yaml infra/.
+
+git add infra
+
+git commit -m "Deploy sealed secrets controller"
+
+git push
+
+# Observe SealedSecrets rollout in Argo CD UI
 
 #############
 # Backstage #
 #############
 
-# TODO: Move to SealedSecrets
-yq --inplace ".data.GITHUB_TOKEN = \"$GITHUB_TOKEN_ENCODED\"" \
-    backstage-secret.yaml
+cat backstage-resources/*.yaml
 
-# TODO: Move to SealedSecrets
-yq --inplace ".data.POSTGRES_PASSWORD = \"$DB_PASS\"" \
-    backstage-secret.yaml
+kubectl --namespace backstage \
+    create secret generic backstage-secrets \
+    --from-literal POSTGRES_USER=app \
+    --from-literal POSTGRES_PASSWORD=$DB_PASS \
+    --from-literal GITHUB_TOKEN=$GITHUB_TOKEN \
+    --from-literal ARGOCD_AUTH_TOKEN=$ARGOCD_AUTH_TOKEN \
+    --dry-run=client --output json
 
-yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"$ARGOCD_AUTH_TOKEN_ENCODED\"" \
-    backstage-secret.yaml
-
-kubeseal --format=yaml --controller-namespace kubeseal < backstage-secret.yaml > backstage-resources/bs-secret.yaml
+kubectl --namespace backstage \
+    create secret generic backstage-secrets \
+    --from-literal POSTGRES_USER=app \
+    --from-literal POSTGRES_PASSWORD=$DB_PASS \
+    --from-literal GITHUB_TOKEN=$GITHUB_TOKEN \
+    --from-literal ARGOCD_AUTH_TOKEN=$ARGOCD_AUTH_TOKEN \
+    --dry-run=client --output yaml \
+    | kubeseal --controller-namespace kubeseal \
+    | tee backstage-resources/bs-secret.json
 
 cat argocd/backstage.yaml
 

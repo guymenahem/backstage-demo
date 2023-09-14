@@ -1,3 +1,4 @@
+---
 # kubernetes/backstage-secrets.yaml
 apiVersion: v1
 kind: ConfigMap
