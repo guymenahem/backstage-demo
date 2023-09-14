@@ -1,20 +1,3 @@
-# Source: TODO:
-
-#########
-# TODO: #
-# TODO: #
-#########
-
-# Additional Info:
-# - Backstage: https://backstage.io
-# - Managed Kubernetes K3s Service By Civo: https://youtu.be/SwOIlzXLIw4
-
-#########
-# Intro #
-#########
-
-# TODO: Intro
-
 #########
 # Setup #
 #########
@@ -289,28 +272,25 @@ echo "https://$BACKSTAGE_URL"
 # Deploy An App #
 #################
 
+cat users-api/deployment.yaml
+
 cat argocd/users-api.yaml
 
 cp argocd/users-api.yaml apps/.
 
-git add apps
+git add .
 
 git commit -m "deploy users-api"
 
 git push
 
+kubectl get all
+
+# TODO: Guy: Show the app in Backstage
+
 #######################
 # Destroy The Cluster #
 #######################
-
-yq --inplace ".data.POSTGRES_PASSWORD = \"SOMETHING\"" \
-    backstage-secret.yaml
-
-yq --inplace ".data.GITHUB_TOKEN = \"SOMETHING\"" \
-    backstage-secret.yaml
-
-yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"SOMETHING\"" \
-    backstage-secret.yaml
 
 civo kubernetes remove $CLUSTER_NAME --region NYC1 --yes
 
