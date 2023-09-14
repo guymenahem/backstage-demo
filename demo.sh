@@ -127,15 +127,6 @@ yq --inplace \
 # Replace `[...]` with your Github token
 export GITHUB_TOKEN=[...]
 
-# TODO: Guy: We should move Backstage manifests to Git so that they
-#   can be managed by Argo CD.
-#   Otherwise, what's the point of showing Argo CD?
-#   To do that, we should not add secrets to manifests.
-#   Even if we do not sync backstage with Argo CD, we will be
-#   pushing app manifests to Git and, with them, the secrets
-#   stored in manifests unencrypted and expose everyone's
-#   GitHub tokens.
-
 yq --inplace \
     ".data.ARGOCD_URL = \"http://argocd.$INGRESS_HOST.nip.io/api/v1/\"" \
     backstage-resources/bs-config.yaml
@@ -186,19 +177,6 @@ export ARGOCD_AUTH_TOKEN=$(argocd account generate-token \
 
 export ARGOCD_AUTH_TOKEN_ENCODED=$(
     echo -n "argocd.token=$ARGOCD_AUTH_TOKEN" | base64)
-
-# TODO: Guy: This one does not deploy anything.
-#   There is no `deployment.yaml` referenced in that manifest.
-# Deploy your first application in ArgoCD
-cat argocd/users-api.yaml
-
-cp argocd/users-api.yaml apps/.
-
-git add apps
-
-git commit -m "deploy users-api"
-
-git push
 
 ##############
 # PostgreSQL #
@@ -293,17 +271,33 @@ cat argocd/backstage.yaml
 
 cp argocd/backstage.yaml infra/.
 
-git add infra
+git add .
 
 git commit -m "Deploy Backstage"
 
 git push
 
-# Check the Backstage rollout in ArgoCD
+# Observe the Backstage rollout in ArgoCD
+
+kubectl --namespace backstage get all,secrets
 
 echo "https://$BACKSTAGE_URL"
 
 # Open the URL from the output in a browser
+
+#################
+# Deploy An App #
+#################
+
+cat argocd/users-api.yaml
+
+cp argocd/users-api.yaml apps/.
+
+git add apps
+
+git commit -m "deploy users-api"
+
+git push
 
 #######################
 # Destroy The Cluster #
