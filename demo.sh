@@ -101,10 +101,9 @@ yq --inplace \
     ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
     argocd/production-infra.yaml
 
-# TODO: Guy: This is not used anywhere
 yq --inplace \
     ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
-    argocd/apps/users-api.yaml
+    argocd/users-api.yaml
 
 yq --inplace \
     ".spec.source.repoURL = \"https://github.com/$GITHUB_ORG/backstage-demo\"" \
@@ -134,10 +133,9 @@ export GITHUB_TOKEN_ENCODED=$(echo -n $GITHUB_TOKEN | base64)
 #   pushing app manifests to Git and, with them, the secrets
 #   stored in manifests unencrypted and expose everyone's
 #   GitHub tokens.
-# TODO: Guy: I suggest using SealedSecrets to generate
-#   `backstage-resources/bs-secret.yaml`.
+
 yq --inplace ".data.GITHUB_TOKEN = \"$GITHUB_TOKEN_ENCODED\"" \
-    backstage-resources/bs-secret.yaml
+    backstage-secret.yaml
 
 yq --inplace \
     ".data.ARGOCD_URL = \"http://argocd.$INGRESS_HOST.nip.io/api/v1/\"" \
@@ -186,6 +184,31 @@ export ARGOCD_AUTH_TOKEN=$(argocd account generate-token \
 
 export ARGOCD_AUTH_TOKEN_ENCODED=$(
     echo -n "argocd.token=$ARGOCD_AUTH_TOKEN" | base64)
+
+# Deploy your first application in ArgoCD
+cat argocd/users-api.yaml
+
+cp argocd/users-api.yaml apps/.
+
+git add apps
+
+git commit -m "deploy users-api"
+
+git push
+
+#################
+# SealedSecrets #
+#################
+cat argocd/sealed-secrets-app.yaml
+
+cp argocd/sealed-secrets-app.yaml infra/.
+
+git add infra
+
+git commit -m "deploy sealed secrets controller"
+
+git push
+
 
 ##############
 # PostgreSQL #
@@ -245,34 +268,26 @@ kubectl exec -it --namespace=backstage backstage-1 -- \
 #############
 
 yq --inplace ".data.POSTGRES_PASSWORD = \"$DB_PASS\"" \
-    backstage-resources/bs-secret.yaml
+    backstage-secret.yaml
 
 yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"$ARGOCD_AUTH_TOKEN_ENCODED\"" \
-    backstage-resources/bs-secret.yaml
+    backstage-secret.yaml
 
-# TODO: Guy: We should create an Argo CD app that points to the
-#   `backstage-resources` directory once we move generation of
-#   secrets to SealedSecrets.
-kubectl apply --filename backstage-resources
 
-# TODO: Guy: Uncomment once we're ready to sync Backstage with
-#   Argo CD.
-#cat argocd/backstage.yaml
-#
-#cp argocd/backstage.yaml infra/.
-#
-#git add .
-#
-#git commit -m "Backstage"
-#
-#git push
+kubeseal --format=yaml --controller-namespace kubeseal < backstage-secret.yaml > backstage-resources/bs-secret.yaml
 
-# TODO: Guy: Change to `Observe in Argo CD` once we move it
-kubectl --namespace backstage rollout status \
-    deployment backstage --watch --timeout=300s
+cat argocd/backstage.yaml
 
-# TODO: Guy: Is there an option to use HTTP (without S) and avoid
-#   certificate issues?
+cp argocd/backstage.yaml infra/.
+
+git add infra
+
+git commit -m "Deploy Backstage"
+
+git push
+
+# Check the Backstage rollout in ArgoCD
+
 echo "https://$BACKSTAGE_URL"
 
 # Open the URL from the output in a browser
@@ -280,24 +295,12 @@ echo "https://$BACKSTAGE_URL"
 #######################
 # Destroy The Cluster #
 #######################
-
-# This is necessary to avoid pushing secrets to Git until
-#   we move to SealedSecrets (or any other alternative).
-# TODO: Guy: Remove it after switching to SealedSecrets.
 yq --inplace ".data.POSTGRES_PASSWORD = \"SOMETHING\"" \
-    backstage-resources/bs-secret.yaml
-
-# This is necessary to avoid pushing secrets to Git until
-#   we move to SealedSecrets (or any other alternative).
-# TODO: Guy: Remove it after switching to SealedSecrets.
+    backstage-secret.yaml
 yq --inplace ".data.GITHUB_TOKEN = \"SOMETHING\"" \
-    backstage-resources/bs-secret.yaml
-
-# This is necessary to avoid pushing secrets to Git until
-#   we move to SealedSecrets (or any other alternative).
-# TODO: Guy: Remove it after switching to SealedSecrets.
+    backstage-secret.yaml
 yq --inplace ".data.ARGOCD_AUTH_TOKEN = \"SOMETHING\"" \
-    backstage-resources/bs-secret.yaml
+    backstage-secret.yaml
 
 civo kubernetes remove $CLUSTER_NAME --region NYC1 --yes
 
