@@ -84,6 +84,10 @@ export INGRESS_HOST=$(\
     kubectl --namespace kube-system get service traefik \
     --output jsonpath="{.status.loadBalancer.ingress[0].ip}")
 
+echo $INGRESS_HOST
+
+# Repeat the `export` command if the output is empty
+
 # Install `yq` from https://github.com/mikefarah/yq if you do not have it already
 yq --inplace \
     ".server.ingress.ingressClassName = \"$INGRESS_CLASS\"" \

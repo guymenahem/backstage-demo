@@ -12,4 +12,4 @@ server:
     enabled: true
     ingressClassName: traefik
     hosts:
-      - argocd.212.2.246.58.nip.io
+      - argocd.212.2.247.168.nip.io
