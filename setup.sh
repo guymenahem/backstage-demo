@@ -2,7 +2,7 @@
 
 set -e
 
-# rm -f kubeconfig*.yaml
+rm -f kubeconfig*.yaml
 
 rm -f .env
 
