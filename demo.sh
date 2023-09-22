@@ -6,7 +6,7 @@ cat argocd/cnpg.yaml
 
 cp argocd/cnpg.yaml infra/.
 
-git add .
+git add infra
 
 git commit -m "CPNG"
 
@@ -123,7 +123,19 @@ git push
 
 kubectl get all
 
-# TODO: Guy: Show the app in Backstage
+#################
+# Deploy An App #
+#################
+
+cat users-api/app-component.yaml 
+
+cp users-api/app-component.yaml catalog/.
+
+git add catalog
+
+git commit -m "add users-api to the catalog"
+
+git push
 
 #######################
 # Destroy The Cluster #
