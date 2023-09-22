@@ -1,38 +1,3 @@
-###########
-# Argo CD #
-###########
-
-helm upgrade --install argocd argo-cd \
-    --repo https://argoproj.github.io/argo-helm \
-    --namespace argocd --create-namespace \
-    --values argocd/helm-values.yaml --wait
-
-echo "http://argocd.$INGRESS_HOST.nip.io"
-
-# Open the URL from the output in a browser
-# Use `admin` as the user and `admin123` as the password
-
-cat argocd/production-apps.yaml
-
-cat argocd/production-infra.yaml
-
-kubectl apply --filename argocd/production-infra.yaml
-
-kubectl apply --filename argocd/production-apps.yaml
-
-export ARGOCD_ADMIN_PASSWORD=admin123
-
-argocd login --insecure --port-forward --insecure \
-    --username admin --password $ARGOCD_ADMIN_PASSWORD \
-    --port-forward-namespace argocd --grpc-web --plaintext
-
-# Generate API auth token for ArgoCD
-export ARGOCD_AUTH_TOKEN=$(argocd account generate-token \
-    --port-forward --port-forward-namespace argocd)
-
-export ARGOCD_AUTH_TOKEN_ENCODED=$(
-    echo -n "argocd.token=$ARGOCD_AUTH_TOKEN" | base64)
-
 ##############
 # PostgreSQL #
 ##############
