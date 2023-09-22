@@ -2,7 +2,7 @@
 
 set -e
 
-rm -f kubeconfig*.yaml
+# rm -f kubeconfig*.yaml
 
 rm -f .env
 
@@ -83,11 +83,11 @@ gum style \
         'Personal Access Token -> Tokens (Classic) -> Generate new token' \
         '' \
         'Required permissions:' \
-        '- repo' \
-        '- read:org' \
-        '- read:user' \
-        '- user:email' \
-        '- workflow'
+        '  - repo' \
+        '  - read:org' \
+        '  - read:user' \
+        '  - user:email' \
+        '  - workflow'
 
 GITHUB_TOKEN=$(gum input --placeholder "GitHub token" --value "$GITHUB_TOKEN" --password)
 echo "export GITHUB_TOKEN=$GITHUB_TOKEN" >> .env
