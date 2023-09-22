@@ -26,13 +26,19 @@ gum confirm "
 Do you have those tools installed?
 " || exit 0
 
-GITHUB_ORG=$(gum input \
+gum confirm "Do you want to use an organizational GitHub account?" && USE_GH_ORG=true || USE_GH_ORG=false
+
+if $USE_GH_ORG ; then
+    GITHUB_ORG=$(gum input \
     --placeholder "Which GitHub organization do you want to use (usually your GH username)?" \
     --value "$GITHUB_ORG")
-echo "export GITHUB_ORG=$GITHUB_ORG" >> .env
+    echo "export GITHUB_ORG=$GITHUB_ORG" >> .env
 
-gh repo fork vfarcic/backstage-demo --clone --remote \
-    --org $GITHUB_ORG
+    gh repo fork vfarcic/backstage-demo --clone --remote \
+        --org $GITHUB_ORG
+else
+    gh repo fork vfarcic/backstage-demo --clone --remote 
+fi
 
 cd backstage-demo
 
