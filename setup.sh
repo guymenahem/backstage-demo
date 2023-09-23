@@ -102,7 +102,7 @@ yq --inplace \
     backstage-resources/bs-config.yaml
 
 yq --inplace \
-    ".data.CATALOG_LOCATION = \"https://github.com/$GITHUB_ORG/backstage-demo/catalog\"" \
+    ".data.CATALOG_LOCATION = \"https://github.com/$GITHUB_ORG/backstage-demo/catalog/catalog-components.yaml\"" \
     backstage-resources/bs-config.yaml
 
 export BACKSTAGE_URL="backstage.$INGRESS_HOST.nip.io"
