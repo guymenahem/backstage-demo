@@ -123,9 +123,9 @@ git push
 
 kubectl get all
 
-#################
-# Deploy An App #
-#################
+##########################
+# Add App To The Catalog #
+##########################
 
 cat users-api/app-component.yaml 
 
