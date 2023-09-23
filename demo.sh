@@ -127,9 +127,11 @@ kubectl get all
 # Add App To The Catalog #
 ##########################
 
-cat users-api/app-component.yaml 
+cat users-api/users-app-component.yaml
 
-cp users-api/app-component.yaml catalog/.
+cp users-api/users-app-component.yaml catalog/.
+
+echo "    - ./users-app-component.yaml" >> catalog/catalog-components.yaml
 
 git add catalog
 
