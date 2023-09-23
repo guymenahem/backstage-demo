@@ -30,15 +30,20 @@ gum confirm "Do you want to use an organizational GitHub account?" && USE_GH_ORG
 
 if $USE_GH_ORG ; then
     GITHUB_ORG=$(gum input \
-    --placeholder "Which GitHub organization do you want to use (usually your GH username)?" \
+    --placeholder "Which GitHub organization do you want to use?" \
     --value "$GITHUB_ORG")
-    echo "export GITHUB_ORG=$GITHUB_ORG" >> .env
 
     gh repo fork vfarcic/backstage-demo --clone --remote \
         --org $GITHUB_ORG
 else
+    GITHUB_ORG=$(gum input \
+    --placeholder "What's your GitHub user name?" \
+    --value "$GITHUB_ORG")
+
     gh repo fork vfarcic/backstage-demo --clone --remote 
 fi
+
+echo "export GITHUB_ORG=$GITHUB_ORG" >> .env
 
 cd backstage-demo
 
@@ -106,6 +111,10 @@ echo "export BACKSTAGE_URL=$BACKSTAGE_URL" >> .env
 yq --inplace ".data.BASE_URL = \"$BACKSTAGE_URL\"" \
     backstage-resources/bs-config.yaml
 
+echo "
+Deploying ArgoCD
+" | gum format
+
 ###########
 # Argo CD #
 ###########
@@ -140,3 +149,14 @@ export ARGOCD_AUTH_TOKEN=$(argocd account generate-token \
 
 export ARGOCD_AUTH_TOKEN_ENCODED=$(
     echo -n "argocd.token=$ARGOCD_AUTH_TOKEN" | base64) >> .env
+
+echo "
+Setup Done!
+
+Please Make Sure You Can Access ArgoCD UI:
+
+ArgoCD NIP http://argocd.$INGRESS_HOST.nip.io 
+Username: admin
+Password: admin123
+
+" | gum format
