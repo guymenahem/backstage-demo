@@ -145,10 +145,10 @@ argocd login --insecure --port-forward --insecure \
 
 # Generate API auth token for ArgoCD
 export ARGOCD_AUTH_TOKEN=$(argocd account generate-token \
-    --port-forward --port-forward-namespace argocd) >> .env
+    --port-forward --port-forward-namespace argocd)
 
-export ARGOCD_AUTH_TOKEN_ENCODED=$(
-    echo -n "argocd.token=$ARGOCD_AUTH_TOKEN" | base64) >> .env
+export ARGOCD_AUTH_TOKEN_ENCODED="argocd.token=$ARGOCD_AUTH_TOKEN"
+echo "export ARGOCD_AUTH_TOKEN_ENCODED=$ARGOCD_AUTH_TOKEN_ENCODED" >> .env
 
 echo "
 Setup Done!
