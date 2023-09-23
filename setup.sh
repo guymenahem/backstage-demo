@@ -100,9 +100,9 @@ echo "export GITHUB_TOKEN=$GITHUB_TOKEN" >> .env
 yq --inplace \
     ".data.ARGOCD_URL = \"http://argocd.$INGRESS_HOST.nip.io/api/v1/\"" \
     backstage-resources/bs-config.yaml
-
+    
 yq --inplace \
-    ".data.CATALOG_LOCATION = \"https://github.com/$GITHUB_ORG/backstage-demo/catalog/catalog-all.yaml\"" \
+    ".data.CATALOG_LOCATION = \"https://github.com/$GITHUB_ORG/backstage-demo/blob/main/catalog/catalog-all.yaml\"" \
     backstage-resources/bs-config.yaml
 
 export BACKSTAGE_URL="backstage.$INGRESS_HOST.nip.io"
