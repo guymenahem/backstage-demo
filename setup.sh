@@ -30,15 +30,20 @@ gum confirm "Do you want to use an organizational GitHub account?" && USE_GH_ORG
 
 if $USE_GH_ORG ; then
     GITHUB_ORG=$(gum input \
-    --placeholder "Which GitHub organization do you want to use (usually your GH username)?" \
+    --placeholder "Which GitHub organization do you want to use?" \
     --value "$GITHUB_ORG")
-    echo "export GITHUB_ORG=$GITHUB_ORG" >> .env
 
     gh repo fork vfarcic/backstage-demo --clone --remote \
         --org $GITHUB_ORG
 else
+    GITHUB_ORG=$(gum input \
+    --placeholder "What's your GitHub user name?" \
+    --value "$GITHUB_ORG")
+
     gh repo fork vfarcic/backstage-demo --clone --remote 
 fi
+
+echo "export GITHUB_ORG=$GITHUB_ORG" >> .env
 
 cd backstage-demo
 
@@ -95,9 +100,9 @@ echo "export GITHUB_TOKEN=$GITHUB_TOKEN" >> .env
 yq --inplace \
     ".data.ARGOCD_URL = \"http://argocd.$INGRESS_HOST.nip.io/api/v1/\"" \
     backstage-resources/bs-config.yaml
-
+    
 yq --inplace \
-    ".data.CATALOG_LOCATION = \"https://github.com/$GITHUB_ORG/backstage-demo/catalog/app-component.yaml\"" \
+    ".data.CATALOG_LOCATION = \"https://github.com/$GITHUB_ORG/backstage-demo/blob/main/catalog/catalog-all.yaml\"" \
     backstage-resources/bs-config.yaml
 
 export BACKSTAGE_URL="backstage.$INGRESS_HOST.nip.io"
@@ -105,6 +110,10 @@ echo "export BACKSTAGE_URL=$BACKSTAGE_URL" >> .env
 
 yq --inplace ".data.BASE_URL = \"$BACKSTAGE_URL\"" \
     backstage-resources/bs-config.yaml
+
+echo "
+Deploying ArgoCD
+" | gum format
 
 ###########
 # Argo CD #
@@ -136,7 +145,18 @@ argocd login --insecure --port-forward --insecure \
 
 # Generate API auth token for ArgoCD
 export ARGOCD_AUTH_TOKEN=$(argocd account generate-token \
-    --port-forward --port-forward-namespace argocd) >> .env
+    --port-forward --port-forward-namespace argocd)
 
-export ARGOCD_AUTH_TOKEN_ENCODED=$(
-    echo -n "argocd.token=$ARGOCD_AUTH_TOKEN" | base64) >> .env
+export ARGOCD_AUTH_TOKEN_ENCODED="argocd.token=$ARGOCD_AUTH_TOKEN"
+echo "export ARGOCD_AUTH_TOKEN_ENCODED=$ARGOCD_AUTH_TOKEN_ENCODED" >> .env
+
+echo "
+Setup Done!
+
+Please Make Sure You Can Access ArgoCD UI:
+
+ArgoCD NIP http://argocd.$INGRESS_HOST.nip.io 
+Username: admin
+Password: admin123
+
+" | gum format

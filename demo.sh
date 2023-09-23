@@ -74,7 +74,7 @@ kubectl --namespace backstage \
     --from-literal POSTGRES_USER=app \
     --from-literal POSTGRES_PASSWORD=$DB_PASS \
     --from-literal GITHUB_TOKEN=$GITHUB_TOKEN \
-    --from-literal ARGOCD_AUTH_TOKEN=$ARGOCD_AUTH_TOKEN \
+    --from-literal ARGOCD_AUTH_TOKEN=$ARGOCD_AUTH_TOKEN_ENCODED \
     --dry-run=client --output json
 
 kubectl --namespace backstage \
@@ -82,7 +82,7 @@ kubectl --namespace backstage \
     --from-literal POSTGRES_USER=app \
     --from-literal POSTGRES_PASSWORD=$DB_PASS \
     --from-literal GITHUB_TOKEN=$GITHUB_TOKEN \
-    --from-literal ARGOCD_AUTH_TOKEN=$ARGOCD_AUTH_TOKEN \
+    --from-literal ARGOCD_AUTH_TOKEN=$ARGOCD_AUTH_TOKEN_ENCODED \
     --dry-run=client --output yaml \
     | kubeseal --controller-namespace kubeseal \
     | tee backstage-resources/bs-secret.json
@@ -123,13 +123,15 @@ git push
 
 kubectl get all
 
-#################
-# Deploy An App #
-#################
+##########################
+# Add App To The Catalog #
+##########################
 
-cat users-api/app-component.yaml 
+cat users-api/users-app-component.yaml 
 
-cp users-api/app-component.yaml catalog/.
+echo "---" >> catalog/catalog-all.yaml
+
+cat users-api/users-app-component.yaml  >> catalog/catalog-all.yaml
 
 git add catalog
 

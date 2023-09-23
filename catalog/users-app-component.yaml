@@ -24,5 +24,6 @@ metadata:
       icon: assignment
       type: logs-dashboard  
 spec:
+  owner: You!
   type: service
   lifecycle: production
