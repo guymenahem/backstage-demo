@@ -129,9 +129,11 @@ kubectl get all
 
 cat users-api/users-app-component.yaml 
 
-echo "---" >> catalog/catalog-all.yaml
+cp users-api/users-app-component.yaml catalog/
 
-cat users-api/users-app-component.yaml  >> catalog/catalog-all.yaml
+yq  --inplace \
+    ".spec.targets += \"./users-app-component.yaml\"" \
+    catalog/catalog-all.yaml
 
 git add catalog
 
